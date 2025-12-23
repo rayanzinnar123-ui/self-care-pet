@@ -374,7 +374,7 @@ function deleteTask(id) {
 // Update rewards display
 function updateRewards() {
   var grid = document.getElementById("rewards-grid")
-  var nextMilestone = Math.ceil((totalCompleted + 1) / 100) * 10
+  var nextMilestone = Math.ceil((totalCompleted + 1) / 10) * 10
   var progress = totalCompleted % 100
 
   document.getElementById("milestone-count").textContent = totalCompleted + " / " + nextMilestone + " tasks"
