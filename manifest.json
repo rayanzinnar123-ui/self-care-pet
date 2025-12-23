@@ -1,0 +1,16 @@
+{
+  "name": "Sproutly - Self Care Pet",
+  "short_name": "Sproutly",
+  "description": "Care for your adorable pet and earn rewards.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#fffbeb",
+  "theme_color": "#f97316",
+  "icons": [
+    {
+      "src": "icons/cat.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

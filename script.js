@@ -11,11 +11,11 @@ var STAGE_NAMES = ["Egg", "Baby", "Teen", "Adult", "Legendary"]
 var LEVEL_THRESHOLDS = [0, 2, 4, 6, 8]
 
 var REWARDS = [
-  { id: 1, name: "First Steps", icon: "🌟", requirement: 100 },
-  { id: 2, name: "Dedicated", icon: "🏅", requirement: 200 },
-  { id: 3, name: "Achiever", icon: "🏆", requirement: 300 },
-  { id: 4, name: "Champion", icon: "👑", requirement: 400 },
-  { id: 5, name: "Legend", icon: "💎", requirement: 500 },
+  { id: 1, name: "First Steps", icon: "🌟", requirement: 10 },
+  { id: 2, name: "Dedicated", icon: "🏅", requirement: 20 },
+  { id: 3, name: "Achiever", icon: "🏆", requirement: 30 },
+  { id: 4, name: "Champion", icon: "👑", requirement: 40 },
+  { id: 5, name: "Legend", icon: "💎", requirement: 50 },
 ]
 
 var MEMORY_SYMBOLS = ["🍎", "🍊", "🍋", "🍇", "🍓", "🍒", "🥝", "🍑", "🍌", "🫐", "🥭", "🍍"]
@@ -374,7 +374,7 @@ function deleteTask(id) {
 // Update rewards display
 function updateRewards() {
   var grid = document.getElementById("rewards-grid")
-  var nextMilestone = Math.ceil((totalCompleted + 1) / 100) * 10
+  var nextMilestone = Math.ceil((totalCompleted + 1) / 10) * 10
   var progress = totalCompleted % 100
 
   document.getElementById("milestone-count").textContent = totalCompleted + " / " + nextMilestone + " tasks"
