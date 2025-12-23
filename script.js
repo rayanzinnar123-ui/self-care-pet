@@ -732,6 +732,8 @@ function movePlayer(dir) {
     // Check win
     if (playerX === goalX && playerY === goalY) {
       addGameScore(200)
+      gamePhase = "finished"   // <<< Prevent further moves
+      renderMaze()             // <<< Update grid one last time
 
       if (gameLevel < 10) {
         showGameMessage("win", "Level Complete!", "Score: " + gameScore, true)
@@ -739,12 +741,17 @@ function movePlayer(dir) {
         showGameMessage("win", "You Beat All 10 Levels!", "Final Score: " + gameScore, false)
       }
       saveProgress()
-    } else if (gameMoves <= 0) {
-      // Out of moves
+      return // stop the function here
+    } 
+
+    // Out of moves
+    if (gameMoves <= 0) {
+      gamePhase = "finished"   // <<< Prevent further moves
       showGameMessage("lose", "Out of Moves!", "You ran out of moves. Try again!")
-    } else {
-      renderMaze()
+      return
     }
+
+    renderMaze()
   }
 }
 
