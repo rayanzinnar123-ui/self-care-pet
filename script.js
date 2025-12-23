@@ -909,4 +909,32 @@ document.addEventListener("DOMContentLoaded", () => {
       movePlayer(keyMap[e.key])
     }
   })
+
+  // Autosave: periodically and when the page is hidden/unloaded
+  var AUTO_SAVE_INTERVAL_MS = 10000
+  setInterval(function () {
+    try {
+      saveProgress()
+    } catch (e) {
+      console.warn("Autosave failed:", e)
+    }
+  }, AUTO_SAVE_INTERVAL_MS)
+
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "hidden") {
+      try {
+        saveProgress()
+      } catch (e) {
+        console.warn("Visibility save failed:", e)
+      }
+    }
+  })
+
+  window.addEventListener("beforeunload", function () {
+    try {
+      saveProgress()
+    } catch (e) {
+      // best-effort
+    }
+  })
 })
