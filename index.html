@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,22 +12,51 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Sproutly">
   <link rel="apple-touch-icon" href="icons/cat.svg">
+  
 </head>
+
 <body>
   <div class="app">
     <!-- Navigation -->
-    <nav class="navigation">
+    <nav class="navigation">I
       <button class="nav-btn active" data-tab="home">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+          <polyline points="9 22 9 12 15 12 15 22" />
+        </svg>
         <span>Home</span>
       </button>
       <button class="nav-btn" data-tab="rewards">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+          <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+          <path d="M4 22h16" />
+          <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+          <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+          <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+        </svg>
         <span>Rewards</span>
       </button>
       <button class="nav-btn" data-tab="games">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="10" y1="12" y2="12"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="15" x2="15.01" y1="13" y2="13"/><line x1="18" x2="18.01" y1="11" y2="11"/><rect width="20" height="12" x="2" y="6" rx="2"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="6" x2="10" y1="12" y2="12" />
+          <line x1="8" x2="8" y1="10" y2="14" />
+          <line x1="15" x2="15.01" y1="13" y2="13" />
+          <line x1="18" x2="18.01" y1="11" y2="11" />
+          <rect width="20" height="12" x="2" y="6" rx="2" />
+        </svg>
         <span>Games</span>
+      </button>
+      <button class="nav-btn" data-tab="addictions">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path
+            d="M12 21s-6-4.35-8.5-7.5A5.5 5.5 0 015 6.5 5.5 5.5 0 0112 3a5.5 5.5 0 017 3.5 5.5 5.5 0 01-1.5 7 15.98 15.98 0 01-5.5 7z" />
+        </svg>
+        <span>Addictions</span>
       </button>
     </nav>
 
@@ -35,17 +65,22 @@
       <!-- Pet Display -->
       <section class="pet-section">
         <button class="customize-btn" id="customize-btn">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path
+              d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
         </button>
-        
+
         <div class="pet-container">
           <div class="pet-emoji" id="pet-emoji">🐱</div>
           <div class="pet-stage" id="pet-stage">Baby</div>
         </div>
-        
+
         <h2 class="pet-name" id="pet-name">Whiskers</h2>
         <p class="pet-level" id="pet-level">Level 1</p>
-        
+
         <div class="stats-container">
           <div class="stat-box">
             <span class="stat-label">XP</span>
@@ -70,14 +105,18 @@
           <h3>Daily Tasks</h3>
           <span class="task-count" id="task-count">0 completed</span>
         </div>
-        
+
         <form class="task-form" id="task-form">
           <input type="text" id="task-input" placeholder="Add a new task..." required>
           <button type="submit" class="add-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14" />
+              <path d="M12 5v14" />
+            </svg>
           </button>
         </form>
-        
+
         <ul class="task-list" id="task-list"></ul>
       </section>
     </main>
@@ -88,7 +127,7 @@
         <h2>Rewards</h2>
         <p>Complete tasks to unlock rewards!</p>
       </div>
-      
+
       <div class="milestone-progress">
         <div class="milestone-info">
           <span>Progress to next reward</span>
@@ -98,7 +137,7 @@
           <div class="progress-fill milestone-fill" id="milestone-bar"></div>
         </div>
       </div>
-      
+
       <div class="rewards-grid" id="rewards-grid"></div>
     </section>
 
@@ -109,7 +148,7 @@
           <h2>Memory Maze</h2>
           <p id="game-instructions">Match cards within the time limit to earn moves!</p>
         </div>
-        
+
         <div class="game-stats">
           <div class="game-stat">
             <span class="stat-label">Level</span>
@@ -124,7 +163,7 @@
             <span class="stat-value" id="game-moves">0</span>
           </div>
         </div>
-        
+
         <!-- Timer display -->
         <div class="timer-container" id="timer-container">
           <div class="timer-bar">
@@ -132,14 +171,14 @@
           </div>
           <span class="timer-text" id="timer-text">15s</span>
         </div>
-        
+
         <div class="game-phase" id="game-phase">
           <!-- Memory Game -->
           <div class="memory-section" id="memory-section">
             <h3>Match pairs to earn moves!</h3>
             <div class="card-grid" id="card-grid"></div>
           </div>
-          
+
           <!-- Maze Game -->
           <div class="maze-section hidden" id="maze-section">
             <h3>Navigate to the goal!</h3>
@@ -154,9 +193,12 @@
             </div>
           </div>
         </div>
-        
+
         <button class="reset-btn" id="reset-game">New Game</button>
       </div>
+    </section>
+    <section id="addictions-tab" class="tab-content">
+      <div id="addictions-app"></div>
     </section>
 
     <!-- Customize Modal -->
@@ -169,7 +211,7 @@
         <div class="modal-body">
           <label class="input-label">Pet Name</label>
           <input type="text" id="pet-name-input" class="modal-input" maxlength="20">
-          
+
           <label class="input-label">Pet Type</label>
           <div class="pet-type-grid" id="pet-type-grid">
             <button class="pet-type-btn" data-type="cat">🐱 Cat</button>
@@ -187,6 +229,7 @@
   </div>
 
   <script src="script.js"></script>
+  <script src="addictions.js"></script>
   <!-- EmailJS SDK (placeholder init) -->
   <script src="https://cdn.emailjs.com/sdk/3.2.0/email.min.js"></script>
   <script>
@@ -196,4 +239,5 @@
     }
   </script>
 </body>
+
 </html>
