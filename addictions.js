@@ -1,9 +1,11 @@
-// addictions.js - extracted from index (2).html, scoped to #addictions-app
+// addiction types
 const addictions = [
   "Alcohol","Vaping/Nicotine","Marijuana","Social Media","Gaming","Gambling",
   "Caffeine","Shopping","Eating Disorders","Pornography","Prescription Drugs","Self-Harm"
 ];
 
+
+// quotes categorized by mood
 const quotesByMood = {
   struggling: [
     { text: "The sun will rise and we will try again.", author: "Twenty One Pilots" },
@@ -37,6 +39,7 @@ const quotesByMood = {
   ]
 };
 
+// app logic
 class AddictionsApp {
   constructor() {
     this.selectedAddiction = null;
@@ -71,7 +74,7 @@ class AddictionsApp {
       this.daysSober = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     }
   }
-
+// time calculation
   calculateTime() {
     if (this.soberDate) {
       const now = new Date();
@@ -93,7 +96,7 @@ class AddictionsApp {
       this.render();
     }, 1000);
   }
-
+// start journey
   startJourney(addiction) {
     const today = new Date();
     this.selectedAddiction = addiction;
@@ -104,7 +107,7 @@ class AddictionsApp {
     this.startDayCounter();
     this.render();
   }
-
+// reset counter
   resetCounter() {
     const today = new Date();
     this.soberDate = today;
@@ -112,7 +115,7 @@ class AddictionsApp {
     if (this.selectedAddiction) localStorage.setItem('sobrietyData', JSON.stringify({ addiction: this.selectedAddiction, date: today.toISOString() }));
     this.render();
   }
-
+// mood chosing
   selectMood(mood) {
     this.selectedMood = mood;
     const moodQuotes = quotesByMood[mood];
@@ -281,8 +284,8 @@ class AddictionsApp {
               <h2 class="card-title" style="font-size:1.25rem;">Need Support?</h2>
             </div>
             <div class="card-content">
-              <p><strong>Crisis Text Line:</strong> Text HOME to 741741</p>
-              <p><strong>SAMHSA National Helpline:</strong> 1-800-662-HELP (24/7)</p>
+              <p><strong>Crisis Text Line:</strong> Text HOME to +961 71 28 38 20</p>
+              <p><strong>SAMHSA National Helpline:</strong> 1564 (24/7)</p>
               <p style="text-wrap:balance;">Remember: Asking for help is a sign of strength, not weakness. You're not alone in this journey.</p>
             </div>
           </div>

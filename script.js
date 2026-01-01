@@ -10,6 +10,7 @@ var PET_TYPES = {
 var STAGE_NAMES = ["Egg", "Baby", "Teen", "Adult", "Legendary"]
 var LEVEL_THRESHOLDS = [0, 2, 4, 6, 8]
 
+// Rewards configuration
 var REWARDS = [
   { id: 1, name: "First Steps", icon: "🌟", requirement: 10 },
   { id: 2, name: "Dedicated", icon: "🏅", requirement: 20 },
@@ -18,6 +19,7 @@ var REWARDS = [
   { id: 5, name: "Legend", icon: "💎", requirement: 50 },
 ]
 
+// Memory game symbols (Game configuration)
 var MEMORY_SYMBOLS = ["🍎", "🍊", "🍋", "🍇", "🍓", "🍒", "🥝", "🍑", "🍌", "🫐", "🥭", "🍍"]
 
 var MAZE_LEVELS = [
@@ -188,6 +190,7 @@ var earnedMoves = 0
 // Track which rewards we've already notified about (persisted)
 var rewardNotified = {}
 
+// Save progress using localStorage
 function saveProgress() {
   localStorage.setItem("taskpet_petName", petName)
   localStorage.setItem("taskpet_petType", petType)
@@ -212,6 +215,7 @@ function saveProgress() {
   }
 }
 
+// Load progress from localStorage
 function loadProgress() {
   var savedName = localStorage.getItem("taskpet_petName")
   if (savedName !== null) {
@@ -258,7 +262,7 @@ function getPetStage() {
   return stageIndex
 }
 
-// Update pet display
+// Update pet display based  on current level
 function updatePetDisplay() {
   var stageIndex = getPetStage()
   var petConfig = PET_TYPES[petType]
@@ -411,7 +415,7 @@ function updateRewards() {
   grid.innerHTML = html
 }
 
-// Send reward notification email via EmailJS (placeholders used)
+// Send reward notification email via EmailJS
 function sendRewardEmail(reward) {
   var templateParams = {
     message: ".",
@@ -422,7 +426,6 @@ function sendRewardEmail(reward) {
   }
 
   if (window.emailjs && typeof emailjs.send === "function") {
-    // Replace 'YOUR_SERVICE_ID' and 'YOUR_TEMPLATE_ID' with your EmailJS service/template IDs
     emailjs
       .send("service_twjqn2g", "template_n7a7wfm", templateParams)
       .then(function (response) {
@@ -436,7 +439,9 @@ function sendRewardEmail(reward) {
   }
 }
 
-// Shuffle array
+
+// Memory game functions
+// Shuffle array for memory game
 function shuffle(array) {
   var arr = array.slice()
   for (var p = arr.length - 1; p > 0; p--) {
@@ -641,6 +646,8 @@ function flipCard(id) {
   }
 }
 
+
+// Start maze game phase (Player movement)
 function startMazeGame() {
   gamePhase = "maze"
   playerX = 0
@@ -834,7 +841,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   })
 
-  // Customize modal
+  // Customize modal (pet)
   document.getElementById("customize-btn").addEventListener("click", () => {
     document.getElementById("customize-modal").classList.remove("hidden")
     document.getElementById("pet-name-input").value = petName
