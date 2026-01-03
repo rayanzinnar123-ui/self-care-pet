@@ -7,15 +7,17 @@
   "background_color": "#fffbeb",
   "theme_color": "#f97316",
   "icons": [
-    {
-      "src": "icons/cat.svg",
-      "sizes": "192x192",
-      "type": "image/svg+xml"
-    },
-    {
-      "src": "icons/cat.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml"
-    }
-  ]
-}
+  {
+    "src": "icons/cat-192.png",
+    "sizes": "192x192",
+    "type": "Screenshot 2025-12-22 201753/png",
+    "purpose": "any"
+  },
+  {
+    "src": "icons/cat-512.png",
+    "sizes": "512x512",
+    "type": "Screenshot 2025-12-22 201753/png",
+    "purpose": "any"
+  }
+]
+
