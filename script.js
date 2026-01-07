@@ -172,6 +172,7 @@ var petHappiness = 50
 var totalCompleted = 0
 var taskList = []
 var taskIdCounter = 1
+var notificationIntervals = {}
 
 // Game state
 var gameLevel = 1
@@ -187,10 +188,22 @@ var currentMaze = []
 var timerInterval = null
 var timeRemaining = 0
 var earnedMoves = 0
-// Track which rewards we've already notified about (persisted)
-var rewardNotified = {}
 
-// Save progress using localStorage
+var notificationPermission = "default"
+
+// Request notification permission
+function requestNotificationPermission() {
+  if ("Notification" in window) {
+    if (Notification.permission === "granted") {
+      notificationPermission = "granted"
+    } else if (Notification.permission !== "denied") {
+      Notification.requestPermission().then((permission) => {
+        notificationPermission = permission
+      })
+    }
+  }
+}
+
 function saveProgress() {
   localStorage.setItem("taskpet_petName", petName)
   localStorage.setItem("taskpet_petType", petType)
@@ -207,15 +220,10 @@ function saveProgress() {
     localStorage.setItem("taskpet_task_" + i + "_id", String(taskList[i].id))
     localStorage.setItem("taskpet_task_" + i + "_text", taskList[i].text)
     localStorage.setItem("taskpet_task_" + i + "_completed", taskList[i].completed ? "1" : "0")
-  }
-  // Save reward notification state
-  for (var ri = 0; ri < REWARDS.length; ri++) {
-    var rid = REWARDS[ri].id
-    localStorage.setItem("taskpet_reward_notified_" + rid, rewardNotified[rid] ? "1" : "0")
+    localStorage.setItem("taskpet_task_" + i + "_deadline", taskList[i].deadline || "")
   }
 }
 
-// Load progress from localStorage
 function loadProgress() {
   var savedName = localStorage.getItem("taskpet_petName")
   if (savedName !== null) {
@@ -235,17 +243,16 @@ function loadProgress() {
       var id = Number.parseInt(localStorage.getItem("taskpet_task_" + j + "_id")) || 0
       var text = localStorage.getItem("taskpet_task_" + j + "_text") || ""
       var completed = localStorage.getItem("taskpet_task_" + j + "_completed") === "1"
+      var deadline = localStorage.getItem("taskpet_task_" + j + "_deadline") || null
       if (text) {
-        taskList.push({ id: id, text: text, completed: completed })
+        taskList.push({ id: id, text: text, completed: completed, deadline: deadline })
         if (id >= taskIdCounter) {
           taskIdCounter = id + 1
         }
+        if (deadline && !completed) {
+          setupTaskNotification(id, deadline)
+        }
       }
-    }
-    // Load reward notification state
-    for (var rj = 0; rj < REWARDS.length; rj++) {
-      var rid = REWARDS[rj].id
-      rewardNotified[rid] = localStorage.getItem("taskpet_reward_notified_" + rid) === "1"
     }
   }
 }
@@ -262,7 +269,7 @@ function getPetStage() {
   return stageIndex
 }
 
-// Update pet display based  on current level
+// Update pet display
 function updatePetDisplay() {
   var stageIndex = getPetStage()
   var petConfig = PET_TYPES[petType]
@@ -318,12 +325,43 @@ function renderTasks() {
   var html = ""
   for (var l = 0; l < taskList.length; l++) {
     var task = taskList[l]
+    var deadlineHtml = ""
+    if (task.deadline) {
+      var now = new Date()
+      var deadline = new Date(task.deadline)
+      var timeUntil = deadline - now
+      var deadlineClass = ""
+      var deadlineText = ""
+
+      if (timeUntil < 0) {
+        deadlineClass = "overdue"
+        deadlineText = "Overdue"
+      } else if (timeUntil < 3600000) {
+        // Less than 1 hour
+        var minutes = Math.floor(timeUntil / 60000)
+        deadlineClass = "warning"
+        deadlineText = minutes + "m left"
+      } else if (timeUntil < 86400000) {
+        // Less than 24 hours
+        var hours = Math.floor(timeUntil / 3600000)
+        deadlineText = hours + "h left"
+      } else {
+        var days = Math.floor(timeUntil / 86400000)
+        deadlineText = days + "d left"
+      }
+
+      deadlineHtml = '<div class="task-deadline ' + deadlineClass + '">' + deadlineText + "</div>"
+    }
+
     html += '<li class="task-item ' + (task.completed ? "completed" : "") + '" data-id="' + task.id + '">'
     html +=
       '<div class="task-checkbox ' + (task.completed ? "checked" : "") + '" onclick="toggleTask(' + task.id + ')">'
     html += task.completed ? "✓" : ""
     html += "</div>"
+    html += '<div class="task-content">'
     html += '<span class="task-text">' + escapeHtml(task.text) + "</span>"
+    html += deadlineHtml
+    html += "</div>"
     html += '<button class="delete-btn" onclick="deleteTask(' + task.id + ')">'
     html +=
       '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
@@ -335,16 +373,65 @@ function renderTasks() {
 }
 
 // Add task
-function addTask(text) {
+function addTask(text, deadline) {
   var task = {
     id: taskIdCounter,
     text: text,
     completed: false,
+    deadline: deadline || null,
   }
   taskIdCounter++
   taskList.unshift(task)
+
+  if (deadline) {
+    setupTaskNotification(task.id, deadline)
+  }
+
   renderTasks()
   saveProgress()
+}
+
+function setupTaskNotification(taskId, deadline) {
+  // Clear any existing notification interval for this task
+  if (notificationIntervals[taskId]) {
+    clearInterval(notificationIntervals[taskId])
+  }
+
+  notificationIntervals[taskId] = setInterval(() => {
+    var now = new Date()
+    var deadlineDate = new Date(deadline)
+    var timeUntil = deadlineDate - now
+
+    // Send notification 1 hour before deadline
+    if (timeUntil > 0 && timeUntil <= 3600000 && timeUntil > 3540000) {
+      sendNotification("Task Reminder", "You have 1 hour to complete your task!")
+    }
+    // Send notification if overdue
+    else if (timeUntil < 0 && timeUntil > -60000) {
+      sendNotification("Task Overdue", "Your task is now overdue! Try to complete it soon.")
+    }
+    // Clear notification when task is far away
+    else if (timeUntil < -60000) {
+      clearInterval(notificationIntervals[taskId])
+      delete notificationIntervals[taskId]
+    }
+  }, 60000) // Check every minute
+}
+
+function sendNotification(title, message) {
+  if (notificationPermission === "granted") {
+    if ("Notification" in window) {
+      try {
+        new Notification(title, {
+          body: message,
+          icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50' y='50' font-size='80' text-anchor='middle' dy='.3em'>🐱</text></svg>",
+          badge: "🐱",
+        })
+      } catch (e) {
+        console.log("[v0] Notification failed:", e)
+      }
+    }
+  }
 }
 
 // Toggle task completion
@@ -354,6 +441,12 @@ function toggleTask(id) {
       taskList[m].completed = true
       totalCompleted++
       addXP(25)
+
+      if (notificationIntervals[id]) {
+        clearInterval(notificationIntervals[id])
+        delete notificationIntervals[id]
+      }
+
       break
     }
   }
@@ -370,6 +463,12 @@ function deleteTask(id) {
       newList.push(taskList[n])
     }
   }
+
+  if (notificationIntervals[id]) {
+    clearInterval(notificationIntervals[id])
+    delete notificationIntervals[id]
+  }
+
   taskList = newList
   renderTasks()
   saveProgress()
@@ -378,7 +477,7 @@ function deleteTask(id) {
 // Update rewards display
 function updateRewards() {
   var grid = document.getElementById("rewards-grid")
-  var nextMilestone = Math.ceil((totalCompleted + 1) / 10) * 10
+  var nextMilestone = Math.ceil((totalCompleted + 1) / 100) * 100
   var progress = totalCompleted % 100
 
   document.getElementById("milestone-count").textContent = totalCompleted + " / " + nextMilestone + " tasks"
@@ -388,17 +487,6 @@ function updateRewards() {
   for (var o = 0; o < REWARDS.length; o++) {
     var reward = REWARDS[o]
     var unlocked = totalCompleted >= reward.requirement
-    // If newly unlocked and not yet notified, send an email (placeholder via EmailJS)
-    if (unlocked && !rewardNotified[reward.id]) {
-      rewardNotified[reward.id] = true
-      try {
-        sendRewardEmail(reward)
-      } catch (e) {
-        console.warn('sendRewardEmail failed:', e)
-      }
-      // persist notification state
-      saveProgress()
-    }
     html += '<div class="reward-card ' + (unlocked ? "unlocked" : "locked") + '">'
     html += '<div class="reward-icon">' + reward.icon + "</div>"
     html += '<div class="reward-name">' + reward.name + "</div>"
@@ -415,33 +503,7 @@ function updateRewards() {
   grid.innerHTML = html
 }
 
-// Send reward notification email via EmailJS
-function sendRewardEmail(reward) {
-  var templateParams = {
-    message: ".",
-    reward_name: reward.name,
-    reward_id: reward.id,
-    pet_name: petName,
-    total_completed: totalCompleted,
-  }
-
-  if (window.emailjs && typeof emailjs.send === "function") {
-    emailjs
-      .send("service_twjqn2g", "template_n7a7wfm", templateParams)
-      .then(function (response) {
-        console.log("Email sent successfully:", response.status, response.text)
-      })
-      .catch(function (err) {
-        console.error("Email send error:", err)
-      })
-  } else {
-    console.log("EmailJS not available - would send:", templateParams)
-  }
-}
-
-
-// Memory game functions
-// Shuffle array for memory game
+// Shuffle array
 function shuffle(array) {
   var arr = array.slice()
   for (var p = arr.length - 1; p > 0; p--) {
@@ -553,19 +615,6 @@ function updateGameStats() {
   document.getElementById("game-moves").textContent = gameMoves
 }
 
-// Add game score and transfer 25% of earned points to pet XP
-function addGameScore(points) {
-  if (!points || points === 0) return
-  gameScore = gameScore + points
-  // Transfer 25% of earned game points to pet XP
-  var xpToPet = Math.round(points * 0.25)
-  if (xpToPet > 0) {
-    addXP(xpToPet)
-  }
-  updateGameStats()
-  saveProgress()
-}
-
 // Render memory game
 function renderMemoryGame() {
   var grid = document.getElementById("card-grid")
@@ -618,8 +667,7 @@ function flipCard(id) {
         first.matched = true
         second.matched = true
         matchedPairs++
-        var pointsEarned = 50
-        addGameScore(pointsEarned)
+        gameScore = gameScore + 50
 
         // Check if all pairs matched
         var totalPairs = gameCards.length / 2
@@ -646,8 +694,6 @@ function flipCard(id) {
   }
 }
 
-
-// Start maze game phase (Player movement)
 function startMazeGame() {
   gamePhase = "maze"
   playerX = 0
@@ -731,14 +777,17 @@ function movePlayer(dir) {
     playerX = newX
     playerY = newY
     gameMoves--
-    addGameScore(10)
+    gameScore = gameScore + 10
+
+    updateGameStats()
 
     var goalX = size - 1
     var goalY = size - 1
 
     // Check win
     if (playerX === goalX && playerY === goalY) {
-      addGameScore(200)
+      gameScore = gameScore + 200
+      updateGameStats()
 
       if (gameLevel < 10) {
         showGameMessage("win", "Level Complete!", "Score: " + gameScore, true)
@@ -815,33 +864,49 @@ function switchTab(tabName) {
 
 // Initialize app
 document.addEventListener("DOMContentLoaded", () => {
-  // Load saved progress
-  loadProgress()
+  requestNotificationPermission()
 
+  loadProgress()
   updatePetDisplay()
   renderTasks()
   updateRewards()
-  initMemoryGame()
 
-  // Navigation
-  var navBtns = document.querySelectorAll(".nav-btn")
-  for (var b = 0; b < navBtns.length; b++) {
-    navBtns[b].addEventListener("click", function () {
-      switchTab(this.getAttribute("data-tab"))
+  // Tab navigation
+  var navButtons = document.querySelectorAll(".nav-btn")
+  var tabContents = document.querySelectorAll(".tab-content")
+
+  navButtons.forEach((btn) => {
+    btn.addEventListener("click", function () {
+      var tabName = this.getAttribute("data-tab")
+
+      navButtons.forEach((b) => {
+        b.classList.remove("active")
+      })
+      tabContents.forEach((tc) => {
+        tc.classList.remove("active")
+      })
+
+      this.classList.add("active")
+      document.getElementById(tabName + "-tab").classList.add("active")
     })
-  }
+  })
 
   // Task form
   document.getElementById("task-form").addEventListener("submit", (e) => {
     e.preventDefault()
     var input = document.getElementById("task-input")
-    if (input.value.trim()) {
-      addTask(input.value.trim())
+    var deadlineInput = document.getElementById("task-deadline")
+    var text = input.value.trim()
+    var deadline = deadlineInput.value || null
+
+    if (text) {
+      addTask(text, deadline)
       input.value = ""
+      deadlineInput.value = ""
     }
   })
 
-  // Customize modal (pet)
+  // Customize modal
   document.getElementById("customize-btn").addEventListener("click", () => {
     document.getElementById("customize-modal").classList.remove("hidden")
     document.getElementById("pet-name-input").value = petName
@@ -914,34 +979,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (keyMap[e.key]) {
       e.preventDefault()
       movePlayer(keyMap[e.key])
-    }
-  })
-
-  // Autosave: periodically and when the page is hidden/unloaded
-  var AUTO_SAVE_INTERVAL_MS = 10000
-  setInterval(function () {
-    try {
-      saveProgress()
-    } catch (e) {
-      console.warn("Autosave failed:", e)
-    }
-  }, AUTO_SAVE_INTERVAL_MS)
-
-  document.addEventListener("visibilitychange", function () {
-    if (document.visibilityState === "hidden") {
-      try {
-        saveProgress()
-      } catch (e) {
-        console.warn("Visibility save failed:", e)
-      }
-    }
-  })
-
-  window.addEventListener("beforeunload", function () {
-    try {
-      saveProgress()
-    } catch (e) {
-      // best-effort
     }
   })
 })
