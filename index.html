@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Sproutly">
   <link rel="apple-touch-icon" href="icons/cat.svg">
-  
+
 </head>
 
 <body>
@@ -109,8 +109,18 @@
         <form class="task-form" id="task-form">
           <input type="text" id="task-input" placeholder="Add a new task..." required>
           <input type="datetime-local" id="task-deadline" class="deadline-input">
+          <select id="task-repeat" class="repeat-input">
+            <option value="none">No Repeat</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
           <button type="submit" class="add-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14" />
+              <path d="M12 5v14" />
+            </svg>
           </button>
         </form>
 
@@ -225,6 +235,16 @@
     </div>
   </div>
 
+  <script>
+    // Register Service Worker for background notifications
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').then((registration) => {
+        console.log('Service Worker registered:', registration)
+      }).catch((error) => {
+        console.log('Service Worker registration failed:', error)
+      })
+    }
+  </script>
   <script src="script.js"></script>
   <script src="addictions.js"></script>
   <!-- EmailJS SDK (placeholder init) -->

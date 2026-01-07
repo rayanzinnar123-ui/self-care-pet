@@ -196,11 +196,35 @@ function requestNotificationPermission() {
   if ("Notification" in window) {
     if (Notification.permission === "granted") {
       notificationPermission = "granted"
+      setupBackgroundMonitoring()
     } else if (Notification.permission !== "denied") {
       Notification.requestPermission().then((permission) => {
         notificationPermission = permission
+        if (permission === "granted") {
+          setupBackgroundMonitoring()
+        }
       })
     }
+  }
+}
+
+// Setup background monitoring with Service Worker
+function setupBackgroundMonitoring() {
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage({
+      type: 'START_MONITORING',
+      tasks: taskList,
+    })
+  }
+}
+
+// Send task updates to Service Worker
+function notifyServiceWorkerOfTaskChange() {
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage({
+      type: 'CHECK_TASKS',
+      tasks: taskList,
+    })
   }
 }
 
@@ -221,6 +245,7 @@ function saveProgress() {
     localStorage.setItem("taskpet_task_" + i + "_text", taskList[i].text)
     localStorage.setItem("taskpet_task_" + i + "_completed", taskList[i].completed ? "1" : "0")
     localStorage.setItem("taskpet_task_" + i + "_deadline", taskList[i].deadline || "")
+    localStorage.setItem("taskpet_task_" + i + "_repeatFreq", taskList[i].repeatFreq || "none")
   }
 }
 
@@ -244,8 +269,9 @@ function loadProgress() {
       var text = localStorage.getItem("taskpet_task_" + j + "_text") || ""
       var completed = localStorage.getItem("taskpet_task_" + j + "_completed") === "1"
       var deadline = localStorage.getItem("taskpet_task_" + j + "_deadline") || null
+      var repeatFreq = localStorage.getItem("taskpet_task_" + j + "_repeatFreq") || "none"
       if (text) {
-        taskList.push({ id: id, text: text, completed: completed, deadline: deadline })
+        taskList.push({ id: id, text: text, completed: completed, deadline: deadline, repeatFreq: repeatFreq })
         if (id >= taskIdCounter) {
           taskIdCounter = id + 1
         }
@@ -373,12 +399,15 @@ function renderTasks() {
 }
 
 // Add task
-function addTask(text, deadline) {
+// Add task
+function addTask(text, deadline, repeatFreq) {
   var task = {
     id: taskIdCounter,
     text: text,
     completed: false,
     deadline: deadline || null,
+    repeatFreq: repeatFreq || 'none', // 'none', 'daily', 'weekly', 'monthly'
+    createdAt: new Date().toISOString(),
   }
   taskIdCounter++
   taskList.unshift(task)
@@ -389,6 +418,7 @@ function addTask(text, deadline) {
 
   renderTasks()
   saveProgress()
+  notifyServiceWorkerOfTaskChange()
 }
 
 function setupTaskNotification(taskId, deadline) {
@@ -453,6 +483,26 @@ function toggleTask(id) {
   renderTasks()
   updateRewards()
   saveProgress()
+  notifyServiceWorkerOfTaskChange()
+}
+
+
+// Schedule next repeat
+function scheduleNextRepeat(task) {
+  var nextDeadline = null
+  var now = new Date()
+
+  if (task.repeatFreq === 'daily') {
+    nextDeadline = new Date(now.getTime() + 24 * 60 * 60 * 1000)
+  } else if (task.repeatFreq === 'weekly') {
+    nextDeadline = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+  } else if (task.repeatFreq === 'monthly') {
+    nextDeadline = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate())
+  }
+
+  if (nextDeadline) {
+    addTask(task.text, nextDeadline.toISOString().slice(0, 16), task.repeatFreq)
+  }
 }
 
 // Delete task
@@ -472,6 +522,7 @@ function deleteTask(id) {
   taskList = newList
   renderTasks()
   saveProgress()
+  notifyServiceWorkerOfTaskChange()
 }
 
 // Update rewards display
@@ -896,13 +947,16 @@ document.addEventListener("DOMContentLoaded", () => {
     e.preventDefault()
     var input = document.getElementById("task-input")
     var deadlineInput = document.getElementById("task-deadline")
+    var repeatInput = document.getElementById("task-repeat")
     var text = input.value.trim()
     var deadline = deadlineInput.value || null
+    var repeatFreq = repeatInput.value || "none"
 
     if (text) {
-      addTask(text, deadline)
+      addTask(text, deadline, repeatFreq)
       input.value = ""
       deadlineInput.value = ""
+      repeatInput.value = "none"
     }
   })
 
