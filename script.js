@@ -913,6 +913,264 @@ function switchTab(tabName) {
   document.querySelector('[data-tab="' + tabName + '"]').classList.add("active")
 }
 
+// ==========================================
+// AI CHAT FUNCTIONALITY
+// ==========================================
+
+let recoveryAI = null
+let speechHandler = null
+let isWaitingForResponse = false
+
+function initializeChat() {
+  console.log('Chat initialization started')
+  
+  // Only initialize when chat tab is active
+  const chatTab = document.getElementById('chat-tab')
+  if (!chatTab) {
+    console.error('Chat tab not found')
+    return
+  }
+
+  const API_KEY = localStorage.getItem('recoveryAI_apiKey')
+  const PROVIDER = localStorage.getItem('recoveryAI_provider') || 'gemini'
+
+  console.log('API Key exists:', !!API_KEY)
+  
+  if (!API_KEY) {
+    console.log('No API key, showing setup')
+    showAPIKeySetup()
+    setupSettingsModalListeners()
+    return
+  }
+
+  console.log('Creating RecoveryAI instance with provider:', PROVIDER)
+  recoveryAI = new RecoveryAI(API_KEY, PROVIDER)
+  speechHandler = new SpeechHandler()
+
+  setupChatEventListeners()
+  loadChatMessages()
+}
+
+function setupSettingsModalListeners() {
+  const settingsBtn = document.getElementById('chat-settings-btn')
+  const saveChatBtn = document.getElementById('save-chat-settings')
+  const closeChatBtn = document.getElementById('close-chat-settings')
+  
+  if (settingsBtn) {
+    settingsBtn.addEventListener('click', openAPIKeyModal)
+  }
+  
+  if (saveChatBtn) {
+    saveChatBtn.addEventListener('click', saveAPIKey)
+  }
+  
+  if (closeChatBtn) {
+    closeChatBtn.addEventListener('click', () => {
+      document.getElementById('chat-settings-modal').classList.add('hidden')
+    })
+  }
+}
+
+function showAPIKeySetup() {
+  const chatMessages = document.getElementById('chat-messages')
+  if (!chatMessages) {
+    console.error('Chat messages element not found')
+    return
+  }
+  
+  chatMessages.innerHTML = `
+    <div style="padding: 2rem; text-align: center;">
+      <p style="margin-bottom: 1rem;"><strong>⚙️ Setup Required</strong></p>
+      <p style="margin-bottom: 1rem; font-size: 0.9rem; color: #78716c;">
+        To use the AI chat feature, you need to set up an API key.
+      </p>
+      <p style="margin-bottom: 1rem; font-size: 0.85rem;">
+        <strong>Click the ⚙️ Settings button above</strong>
+      </p>
+      <div style="background: #fffbeb; padding: 1rem; border-radius: 0.5rem; font-size: 0.85rem;">
+        <p><strong>Free Options:</strong></p>
+        <p>• Google Gemini</p>
+        <p>• Claude API</p>
+        <p style="margin-top: 0.5rem;"><strong>Paid:</strong></p>
+        <p>• OpenAI GPT</p>
+      </div>
+    </div>
+  `
+}
+
+function setupChatEventListeners() {
+  const sendBtn = document.getElementById('send-btn')
+  const micBtn = document.getElementById('mic-btn')
+  const chatInput = document.getElementById('chat-input')
+  const settingsBtn = document.getElementById('chat-settings-btn')
+
+  if (!sendBtn || !micBtn || !chatInput || !settingsBtn) {
+    console.error('Chat elements not found', {
+      sendBtn: !!sendBtn,
+      micBtn: !!micBtn,
+      chatInput: !!chatInput,
+      settingsBtn: !!settingsBtn
+    })
+    return
+  }
+
+  sendBtn.addEventListener('click', handleSendMessage)
+  micBtn.addEventListener('click', handleVoiceInput)
+  settingsBtn.addEventListener('click', openAPIKeyModal)
+
+  chatInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSendMessage()
+    }
+  })
+
+  // Settings modal handlers
+  const saveChatBtn = document.getElementById('save-chat-settings')
+  const closeChatBtn = document.getElementById('close-chat-settings')
+  
+  if (saveChatBtn) saveChatBtn.addEventListener('click', saveAPIKey)
+  if (closeChatBtn) closeChatBtn.addEventListener('click', () => {
+    document.getElementById('chat-settings-modal').classList.add('hidden')
+  })
+  
+  console.log('Chat event listeners setup complete')
+}
+
+function openAPIKeyModal() {
+  const modal = document.getElementById('chat-settings-modal')
+  modal.classList.remove('hidden')
+  document.getElementById('api-provider').value = localStorage.getItem('recoveryAI_provider') || 'gemini'
+  document.getElementById('api-key-input').value = localStorage.getItem('recoveryAI_apiKey') || ''
+}
+
+function saveAPIKey() {
+  const apiKey = document.getElementById('api-key-input').value.trim()
+  const provider = document.getElementById('api-provider').value
+
+  if (!apiKey) {
+    alert('Please enter an API key')
+    return
+  }
+
+  localStorage.setItem('recoveryAI_apiKey', apiKey)
+  localStorage.setItem('recoveryAI_provider', provider)
+
+  document.getElementById('chat-settings-modal').classList.add('hidden')
+  location.reload()
+}
+
+async function handleSendMessage() {
+  if (!recoveryAI) {
+    alert('Chat not initialized. Please setup your API key.')
+    return
+  }
+
+  const chatInput = document.getElementById('chat-input')
+  const message = chatInput.value.trim()
+
+  if (!message || isWaitingForResponse) {
+    return
+  }
+
+  displayMessage(message, 'user')
+  chatInput.value = ''
+
+  showLoadingIndicator()
+  isWaitingForResponse = true
+
+  try {
+    const response = await recoveryAI.sendMessage(message)
+    removeLoadingIndicator()
+    displayMessage(response, 'assistant')
+
+    const shouldSpeak = document.getElementById('auto-speak')?.checked
+    if (shouldSpeak && speechHandler) {
+      speechHandler.speak(response)
+    }
+  } catch (error) {
+    removeLoadingIndicator()
+    console.error('Error:', error)
+    displayMessage('Sorry, I encountered an error. Please check your API key and try again.', 'assistant')
+  }
+
+  isWaitingForResponse = false
+}
+
+function handleVoiceInput() {
+  if (!speechHandler || !speechHandler.recognition) {
+    alert('Speech recognition not supported in your browser')
+    return
+  }
+
+  const micBtn = document.getElementById('mic-btn')
+
+  if (speechHandler.isListening) {
+    speechHandler.stopListening()
+    return
+  }
+
+  speechHandler.onListeningStart = () => {
+    micBtn.classList.add('listening')
+  }
+
+  speechHandler.onListeningEnd = () => {
+    micBtn.classList.remove('listening')
+  }
+
+  speechHandler.startListening((transcript) => {
+    document.getElementById('chat-input').value = transcript
+    if (transcript.trim()) {
+      handleSendMessage()
+    }
+  })
+}
+
+function displayMessage(text, role) {
+  const chatMessages = document.getElementById('chat-messages')
+  const messageDiv = document.createElement('div')
+  messageDiv.className = `message ${role}-message`
+  
+  const content = document.createElement('p')
+  content.textContent = text
+
+  messageDiv.appendChild(content)
+  chatMessages.appendChild(messageDiv)
+
+  chatMessages.scrollTop = chatMessages.scrollHeight
+}
+
+function showLoadingIndicator() {
+  const chatMessages = document.getElementById('chat-messages')
+  const loadingDiv = document.createElement('div')
+  loadingDiv.className = 'message ai-message typing-indicator'
+  loadingDiv.id = 'loading-indicator'
+  loadingDiv.innerHTML = `<span></span><span></span><span></span>`
+  chatMessages.appendChild(loadingDiv)
+  chatMessages.scrollTop = chatMessages.scrollHeight
+}
+
+function removeLoadingIndicator() {
+  const indicator = document.getElementById('loading-indicator')
+  if (indicator) {
+    indicator.remove()
+  }
+}
+
+function loadChatMessages() {
+  if (!recoveryAI || recoveryAI.conversationHistory.length === 0) {
+    displayMessage(
+      "Hi there! I'm your Recovery Assistant. I'm here to help you with your journey. You can ask me anything about managing your addiction or dealing with cravings. How are you feeling today?",
+      'assistant'
+    )
+    return
+  }
+
+  recoveryAI.conversationHistory.forEach(msg => {
+    displayMessage(msg.content, msg.role)
+  })
+}
+
 // Initialize app
 document.addEventListener("DOMContentLoaded", () => {
   requestNotificationPermission()
@@ -1035,4 +1293,9 @@ document.addEventListener("DOMContentLoaded", () => {
       movePlayer(keyMap[e.key])
     }
   })
+
+  // Initialize chat after DOM is loaded
+  setTimeout(() => {
+    initializeChat()
+  }, 100)
 })

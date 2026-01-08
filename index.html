@@ -58,6 +58,13 @@
         </svg>
         <span>Addictions</span>
       </button>
+      <button class="nav-btn" data-tab="chat">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
+        <span>Chat</span>
+      </button>
     </nav>
 
     <!-- Home Tab -->
@@ -207,6 +214,85 @@
     <section id="addictions-tab" class="tab-content">
       <div id="addictions-app"></div>
     </section>
+    <!-- Chat Tab -->
+    <section id="chat-tab" class="tab-content">
+      <div class="chat-container">
+        <!-- Settings Modal -->
+        <div class="modal-overlay hidden" id="chat-settings-modal">
+          <div class="modal">
+            <div class="modal-header">
+              <h3>AI Chat Settings</h3>
+              <button class="close-btn" id="close-chat-settings">&times;</button>
+            </div>
+            <div class="modal-body">
+              <label class="input-label">AI Provider</label>
+              <select id="api-provider" class="modal-input">
+                <option value="openai">OpenAI (GPT-4)</option>
+                <option value="gemini">Google Gemini</option>
+                <option value="ollama">Local Ollama</option>
+              </select>
+
+              <label class="input-label">API Key</label>
+              <input type="password" id="api-key-input" class="modal-input" placeholder="Enter your API key">
+              <small style="color: var(--text-muted);">Your API key is stored locally only.</small>
+            </div>
+            <div class="modal-footer">
+              <button class="save-btn" id="save-chat-settings">Save Settings</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Header -->
+        <div class="chat-header">
+          <h2>Recovery Coach</h2>
+          <button class="icon-btn" id="chat-settings-btn" title="Settings">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 1v6m0 6v6" />
+              <path d="M4.22 4.22l4.24 4.24" />
+              <path d="M14.12 9.88l4.24 4.24" />
+              <path d="M1 12h6" />
+              <path d="M17 12h6" />
+              <path d="M4.22 19.78l4.24-4.24" />
+              <path d="M14.12 14.12l4.24-4.24" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Messages Display -->
+        <div class="chat-messages" id="chat-messages"></div>
+
+        <!-- Input Area -->
+        <div class="chat-input-area">
+          <button class="voice-btn" id="mic-btn" title="Voice chat">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v12a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+              <line x1="12" y1="19" x2="12" y2="23" />
+              <line x1="8" y1="23" x2="16" y2="23" />
+            </svg>
+          </button>
+          <input type="text" id="chat-input" placeholder="Type your message or press the mic button..."
+            class="chat-input">
+          <button class="send-btn" id="send-btn" title="Send message">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13" />
+              <polygon points="22 2 15 22 11 13 2 9 22 2" />
+            </svg>
+          </button>
+        </div>
+
+        <div style="padding: 0.75rem; text-align: center;">
+          <label
+            style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.875rem; color: var(--text-muted);">
+            <input type="checkbox" id="auto-speak"> Auto-speak responses
+          </label>
+        </div>
+      </div>
+    </section>
 
     <!-- Customize pet -->
     <div class="modal-overlay hidden" id="customize-modal">
@@ -247,6 +333,7 @@
   </script>
   <script src="script.js"></script>
   <script src="addictions.js"></script>
+  <script src="chat-ai.js"></script>
   <!-- EmailJS SDK (placeholder init) -->
   <script src="https://cdn.emailjs.com/sdk/3.2.0/email.min.js"></script>
   <script>
