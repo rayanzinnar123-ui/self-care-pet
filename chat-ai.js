@@ -67,6 +67,8 @@ Important guidelines:
         aiResponse = await this.sendToOpenAI(userMessage)
       } else if (this.provider === 'claude') {
         aiResponse = await this.sendToClaude(userMessage)
+      } else if (this.provider === 'ollama') {
+        aiResponse = await this.sendToOllama(userMessage)
       }
 
       // Add AI response to history
@@ -85,29 +87,35 @@ Important guidelines:
   }
 
   async sendToGemini(userMessage) {
+    // Build the message history
+    const contents = this.conversationHistory.map(msg => ({
+      role: msg.role === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.content }]
+    }))
+
     const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + this.apiKey, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        system: {
-          role: 'user',
+        systemInstruction: {
           parts: [{ text: this.systemPrompt }]
         },
-        contents: this.conversationHistory.map(msg => ({
-          role: msg.role === 'user' ? 'user' : 'model',
-          parts: [{ text: msg.content }]
-        }))
+        contents: contents
       })
     })
 
     if (!response.ok) {
-      const error = await response.json()
-      throw new Error(`Gemini API error: ${error.error?.message || response.statusText}`)
+      const errorData = await response.text()
+      console.error('Gemini response:', errorData)
+      throw new Error(`Gemini API error: ${errorData}`)
     }
 
     const data = await response.json()
+    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+      throw new Error('Invalid Gemini response format')
+    }
     return data.candidates[0].content.parts[0].text
   }
 
@@ -168,6 +176,36 @@ Important guidelines:
 
     const data = await response.json()
     return data.content[0].text
+  }
+
+  async sendToOllama(userMessage) {
+    // Build full conversation with system prompt
+    const messages = [
+      { role: 'system', content: this.systemPrompt },
+      ...this.conversationHistory.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }))
+    ]
+
+    const response = await fetch('http://localhost:11434/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'qwen2.5:1.5b',
+        messages: messages,
+        stream: false
+      })
+    })
+
+    if (!response.ok) {
+      throw new Error(`Ollama error: ${response.statusText}. Make sure Ollama is running on http://localhost:11434`)
+    }
+
+    const data = await response.json()
+    return data.message.content
   }
 }
 
