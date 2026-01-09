@@ -10,24 +10,10 @@ class RecoveryAI {
   }
 
   getSystemPrompt() {
-    return `You are a compassionate and evidence-based Recovery Assistant designed to help people struggling with addiction. Your role is to:
-
-1. Provide emotional support and validation
-2. Offer evidence-based coping strategies
-3. Help users identify triggers and develop action plans
-4. Encourage professional help when needed
-5. Celebrate milestones and progress
-6. Never shame or judge
-7. Maintain confidentiality and safety
-
-Important guidelines:
-- Be warm, empathetic, and non-judgmental
-- Use cognitive behavioral therapy (CBT) techniques when appropriate
-- Encourage healthy coping mechanisms
-- Remind users that recovery is a journey, not a destination
-- Always encourage professional help for serious concerns
-- Never provide medical advice, only support and coping strategies
-- Keep responses concise and actionable`
+    const addiction = addictionsApp?.selectedAddiction || 'addiction'
+    const daysSober = addictionsApp?.daysSober || 0
+    
+    return `Help someone fighting ${addiction} (${daysSober} days sober). Give direct, practical advice. Be supportive, never judgmental. Keep it short.`
   }
 
   saveChatHistory() {
@@ -86,126 +72,183 @@ Important guidelines:
     }
   }
 
+  // Get only recent messages to keep API calls fast (last 4 messages = 2 exchanges for Ollama speed)
+  getRecentHistory() {
+    return this.conversationHistory.slice(-4)
+  }
+
   async sendToGemini(userMessage) {
-    // Build the message history
-    const contents = this.conversationHistory.map(msg => ({
+    // Build the message history - use only recent messages for speed
+    const contents = this.getRecentHistory().map(msg => ({
       role: msg.role === 'user' ? 'user' : 'model',
       parts: [{ text: msg.content }]
     }))
 
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + this.apiKey, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        systemInstruction: {
-          parts: [{ text: this.systemPrompt }]
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 15000) // 15 second timeout
+
+    try {
+      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + this.apiKey, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
         },
-        contents: contents
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [{ text: this.systemPrompt }]
+          },
+          contents: contents
+        }),
+        signal: controller.signal
       })
-    })
 
-    if (!response.ok) {
-      const errorData = await response.text()
-      console.error('Gemini response:', errorData)
-      throw new Error(`Gemini API error: ${errorData}`)
-    }
+      if (!response.ok) {
+        const errorData = await response.text()
+        console.error('Gemini response:', errorData)
+        throw new Error(`Gemini API error: ${errorData}`)
+      }
 
-    const data = await response.json()
-    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-      throw new Error('Invalid Gemini response format')
+      const data = await response.json()
+      if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+        throw new Error('Invalid Gemini response format')
+      }
+      return data.candidates[0].content.parts[0].text
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        throw new Error('Gemini request timed out (15s). Try a different provider.')
+      }
+      throw error
+    } finally {
+      clearTimeout(timeout)
     }
-    return data.candidates[0].content.parts[0].text
   }
 
   async sendToOpenAI(userMessage) {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + this.apiKey,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
-        messages: [
-          {
-            role: 'system',
-            content: this.systemPrompt
-          },
-          ...this.conversationHistory.map(msg => ({
-            role: msg.role,
-            content: msg.content
-          }))
-        ],
-        temperature: 0.7,
-        max_tokens: 500
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 20000) // 20 second timeout
+
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + this.apiKey,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'gpt-3.5-turbo',
+          messages: [
+            {
+              role: 'system',
+              content: this.systemPrompt
+            },
+            ...this.getRecentHistory().map(msg => ({
+              role: msg.role,
+              content: msg.content
+            }))
+          ],
+          temperature: 0.7,
+          max_tokens: 500
+        }),
+        signal: controller.signal
       })
-    })
 
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.statusText}`)
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      return data.choices[0].message.content
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        throw new Error('OpenAI request timed out (20s). Try a different provider.')
+      }
+      throw error
+    } finally {
+      clearTimeout(timeout)
     }
-
-    const data = await response.json()
-    return data.choices[0].message.content
   }
 
   async sendToClaude(userMessage) {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': this.apiKey,
-        'anthropic-version': '2023-06-01',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 500,
-        system: this.systemPrompt,
-        messages: this.conversationHistory.map(msg => ({
-          role: msg.role,
-          content: msg.content
-        }))
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 20000) // 20 second timeout
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': this.apiKey,
+          'anthropic-version': '2023-06-01',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: 500,
+          system: this.systemPrompt,
+          messages: this.getRecentHistory().map(msg => ({
+            role: msg.role,
+            content: msg.content
+          }))
+        }),
+        signal: controller.signal
       })
-    })
 
-    if (!response.ok) {
-      throw new Error(`Claude API error: ${response.statusText}`)
+      if (!response.ok) {
+        throw new Error(`Claude API error: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      return data.content[0].text
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        throw new Error('Claude request timed out (20s). Try a different provider.')
+      }
+      throw error
+    } finally {
+      clearTimeout(timeout)
     }
-
-    const data = await response.json()
-    return data.content[0].text
   }
 
   async sendToOllama(userMessage) {
-    // Build full conversation with system prompt
+    // Build full conversation with system prompt - use only recent messages for speed
     const messages = [
       { role: 'system', content: this.systemPrompt },
-      ...this.conversationHistory.map(msg => ({
+      ...this.getRecentHistory().map(msg => ({
         role: msg.role,
         content: msg.content
       }))
     ]
 
-    const response = await fetch('http://localhost:11434/api/chat', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'qwen2.5:1.5b',
-        messages: messages,
-        stream: false
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 120000) // 120 second timeout for slow local models
+
+    try {
+      const response = await fetch('http://localhost:11434/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'qwen2.5:1.5b',
+          messages: messages,
+          stream: false
+        }),
+        signal: controller.signal
       })
-    })
 
-    if (!response.ok) {
-      throw new Error(`Ollama error: ${response.statusText}. Make sure Ollama is running on http://localhost:11434`)
+      if (!response.ok) {
+        throw new Error(`Ollama error: ${response.statusText}. Make sure Ollama is running on http://localhost:11434`)
+      }
+
+      const data = await response.json()
+      return data.message.content
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        throw new Error('Ollama took too long (120s+). qwen2.5 is slow on limited hardware. Try: 1) Close other apps to free RAM, 2) Use GPU acceleration, or 3) Switch to Gemini/OpenAI/Claude in settings.')
+      }
+      throw error
+    } finally {
+      clearTimeout(timeout)
     }
-
-    const data = await response.json()
-    return data.message.content
   }
 }
 
@@ -270,27 +313,36 @@ class SpeechHandler {
     }
   }
 
-  speak(text, onComplete) {
-    if (!('speechSynthesis' in window)) {
-      onComplete?.()
-      return
+  getFollowUpSuggestions(aiResponse) {
+    const addiction = addictionsApp?.selectedAddiction || 'addiction'
+    
+    const suggestions = {
+      'Alcohol': [
+        'How can I handle social situations?',
+        'What are my triggers?',
+        'Help me with cravings',
+        'Tell me about support groups'
+      ],
+      'Social Media': [
+        'How to reduce screen time?',
+        'What to do instead?',
+        'Breaking the habit',
+        'Managing FOMO'
+      ],
+      'Gaming': [
+        'Alternative activities',
+        'Time management tips',
+        'Dealing with withdrawal',
+        'Healthy hobbies'
+      ],
+      'default': [
+        'What should I do today?',
+        'I\'m struggling right now',
+        'Tell me a success story',
+        'Give me a coping strategy'
+      ]
     }
-
-    speechSynthesis.cancel()
-
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.rate = 1
-    utterance.pitch = 1
-    utterance.volume = 1
-
-    utterance.onend = () => {
-      onComplete?.()
-    }
-
-    utterance.onerror = () => {
-      onComplete?.()
-    }
-
-    speechSynthesis.speak(utterance)
+    
+    return suggestions[addiction] || suggestions['default']
   }
 }

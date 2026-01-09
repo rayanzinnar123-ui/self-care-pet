@@ -1003,6 +1003,7 @@ function setupChatEventListeners() {
   const micBtn = document.getElementById('mic-btn')
   const chatInput = document.getElementById('chat-input')
   const settingsBtn = document.getElementById('chat-settings-btn')
+  const newConvoBtn = document.getElementById('new-convo-btn')
 
   if (!sendBtn || !micBtn || !chatInput || !settingsBtn) {
     console.error('Chat elements not found', {
@@ -1017,6 +1018,7 @@ function setupChatEventListeners() {
   sendBtn.addEventListener('click', handleSendMessage)
   micBtn.addEventListener('click', handleVoiceInput)
   settingsBtn.addEventListener('click', openAPIKeyModal)
+  if (newConvoBtn) newConvoBtn.addEventListener('click', startNewConversation)
 
   chatInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1083,6 +1085,14 @@ async function handleSendMessage() {
     const response = await recoveryAI.sendMessage(message)
     removeLoadingIndicator()
     displayMessage(response, 'assistant')
+    
+    try {
+      // Show follow-up suggestions (wrapped in try-catch so errors don't break chat)
+      showFollowUpSuggestions(response)
+    } catch (suggestionError) {
+      console.error('Error showing follow-up suggestions:', suggestionError)
+      // Continue anyway - chat still works without suggestions
+    }
 
     const shouldSpeak = document.getElementById('auto-speak')?.checked
     if (shouldSpeak && speechHandler) {
@@ -1090,7 +1100,9 @@ async function handleSendMessage() {
     }
   } catch (error) {
     removeLoadingIndicator()
-    console.error('Error:', error)
+    console.error('Full error object:', error)
+    console.error('Error message:', error.message)
+    console.error('Error stack:', error.stack)
     displayMessage('Sorry, I encountered an error. Please check your API key and try again.', 'assistant')
   }
 
@@ -1126,13 +1138,279 @@ function handleVoiceInput() {
   })
 }
 
+function displayStarterPrompts() {
+  const addiction = addictionsApp?.selectedAddiction || 'addiction'
+  const daysSober = addictionsApp?.daysSober || 0
+  
+  const chatMessages = document.getElementById('chat-messages')
+  chatMessages.innerHTML = ''
+  
+  // Welcome message
+  const welcomeDiv = document.createElement('div')
+  welcomeDiv.className = 'message ai-message'
+  welcomeDiv.innerHTML = `<p><strong>Welcome to your Recovery Journey! 💪</strong><br><br>
+    You're fighting ${addiction} and you're <strong>${daysSober} days strong!</strong><br><br>
+    I'm here to support you with advice, coping strategies, and encouragement. What would you like to talk about?</p>`
+  chatMessages.appendChild(welcomeDiv)
+  
+  // Starter prompts
+  const promptsDiv = document.createElement('div')
+  promptsDiv.style.padding = '1rem'
+  promptsDiv.style.display = 'flex'
+  promptsDiv.style.flexDirection = 'column'
+  promptsDiv.style.gap = '0.5rem'
+  
+  const starterPrompts = getStarterPrompts(addiction)
+  
+  starterPrompts.forEach(prompt => {
+    const btn = document.createElement('button')
+    btn.className = 'starter-prompt-btn'
+    btn.textContent = prompt
+    btn.onclick = () => {
+      document.getElementById('chat-input').value = prompt
+      handleSendMessage()
+    }
+    promptsDiv.appendChild(btn)
+  })
+  
+  chatMessages.appendChild(promptsDiv)
+}
+
+function startNewConversation() {
+  if (!recoveryAI) {
+    alert('Chat not initialized')
+    return
+  }
+  
+  // Clear conversation history
+  recoveryAI.clearChatHistory()
+  
+  // Clear input
+  document.getElementById('chat-input').value = ''
+  
+  // Show starter prompts again
+  displayStarterPrompts()
+  
+  console.log('Started new conversation')
+}
+
+function getStarterPrompts(addiction) {
+  const prompts = {
+    'Alcohol': [
+      'How do I handle the urge to drink?',
+      'What are common triggers I should know about?',
+      'Can you suggest healthy alternatives?',
+      'Tell me about support groups for alcohol recovery'
+    ],
+    'Vaping/Nicotine': [
+      'How to manage nicotine cravings?',
+      'What are withdrawal symptoms I might face?',
+      'Best techniques to quit vaping?',
+      'How long until cravings get easier?'
+    ],
+    'Marijuana': [
+      'How to quit smoking marijuana?',
+      'What are the withdrawal effects?',
+      'Help me understand my triggers',
+      'Tips for staying motivated'
+    ],
+    'Social Media': [
+      'How do I break my social media addiction?',
+      'What should I do instead of scrolling?',
+      'Managing FOMO and anxiety',
+      'Tips for digital detox'
+    ],
+    'Gaming': [
+      'How to quit gaming addiction?',
+      'What are healthy alternatives?',
+      'Managing gaming urges',
+      'Getting my life back on track'
+    ],
+    'Gambling': [
+      'How do I stop gambling?',
+      'What triggers my gambling urges?',
+      'Financial recovery tips',
+      'Finding support for gambling addiction'
+    ],
+    'Caffeine': [
+      'How to reduce caffeine intake?',
+      'Managing caffeine withdrawal',
+      'Better sleep without caffeine',
+      'Healthy energy alternatives'
+    ],
+    'Shopping': [
+      'How to stop shopping compulsively?',
+      'Managing spending urges',
+      'Financial recovery strategies',
+      'Finding fulfillment without shopping'
+    ],
+    'Eating Disorders': [
+      'Help with my eating disorder',
+      'How to develop a healthy relationship with food?',
+      'Managing triggers and emotions',
+      'Finding professional support'
+    ],
+    'Pornography': [
+      'How do I quit pornography?',
+      'Managing urges and triggers',
+      'Healthy relationships and sexuality',
+      'Recovery strategies that work'
+    ],
+    'Prescription Drugs': [
+      'How to manage prescription drug dependence?',
+      'Safe withdrawal strategies',
+      'Talking to my doctor about this',
+      'Pain management without dependency'
+    ],
+    'Self-Harm': [
+      'I need help with self-harm urges',
+      'Alternative coping mechanisms',
+      'How to process difficult emotions',
+      'Building a support system'
+    ]
+  }
+  
+  return prompts[addiction] || [
+    'How can I start my recovery today?',
+    'What are my biggest challenges?',
+    'Give me some practical coping strategies',
+    'I need motivation and support'
+  ]
+}
+
+function showFollowUpSuggestions(aiResponse) {
+  const chatMessages = document.getElementById('chat-messages')
+  if (!chatMessages) return
+  
+  try {
+    const suggestionsDiv = document.createElement('div')
+    suggestionsDiv.className = 'follow-up-suggestions'
+    suggestionsDiv.style.padding = '1rem'
+    suggestionsDiv.style.display = 'flex'
+    suggestionsDiv.style.flexDirection = 'column'
+    suggestionsDiv.style.gap = '0.5rem'
+    suggestionsDiv.style.borderTop = '1px solid var(--border)'
+    suggestionsDiv.style.marginTop = '0.5rem'
+    suggestionsDiv.style.paddingTop = '1rem'
+    
+    const label = document.createElement('p')
+    label.style.fontSize = '0.75rem'
+    label.style.color = 'var(--text-muted)'
+    label.style.marginBottom = '0.5rem'
+    label.style.fontWeight = '600'
+    label.textContent = '💡 Follow-up ideas:'
+    suggestionsDiv.appendChild(label)
+    
+    if (!recoveryAI) return
+    
+    const suggestions = recoveryAI.getFollowUpSuggestions(aiResponse)
+    if (!suggestions || suggestions.length === 0) return
+    
+    suggestions.forEach(suggestion => {
+      const btn = document.createElement('button')
+      btn.className = 'follow-up-btn'
+      btn.textContent = suggestion
+      btn.style.padding = '0.5rem 1rem'
+      btn.style.border = '1px solid var(--secondary)'
+      btn.style.background = 'transparent'
+      btn.style.color = 'var(--secondary)'
+      btn.style.borderRadius = '0.5rem'
+      btn.style.cursor = 'pointer'
+      btn.style.fontSize = '0.85rem'
+      btn.style.transition = 'all 0.2s'
+      btn.style.textAlign = 'left'
+      
+      btn.onmouseover = () => {
+        btn.style.background = 'var(--secondary)'
+        btn.style.color = 'white'
+      }
+      btn.onmouseout = () => {
+        btn.style.background = 'transparent'
+        btn.style.color = 'var(--secondary)'
+      }
+      btn.onclick = () => {
+        document.getElementById('chat-input').value = suggestion
+        handleSendMessage()
+      }
+      suggestionsDiv.appendChild(btn)
+    })
+    
+    chatMessages.appendChild(suggestionsDiv)
+    chatMessages.scrollTop = chatMessages.scrollHeight
+  } catch (e) {
+    console.error('Error creating follow-up suggestions:', e)
+  }
+}
+
+function handleVoiceInput() {
+  if (!speechHandler || !speechHandler.recognition) {
+    alert('Speech recognition not supported in your browser')
+    return
+  }
+
+  const micBtn = document.getElementById('mic-btn')
+
+  if (speechHandler.isListening) {
+    speechHandler.stopListening()
+    return
+  }
+
+  speechHandler.onListeningStart = () => {
+    micBtn.classList.add('listening')
+  }
+
+  speechHandler.onListeningEnd = () => {
+    micBtn.classList.remove('listening')
+  }
+
+  speechHandler.startListening((transcript) => {
+    document.getElementById('chat-input').value = transcript
+    if (transcript.trim()) {
+      handleSendMessage()
+    }
+  })
+}
+
 function displayMessage(text, role) {
   const chatMessages = document.getElementById('chat-messages')
+  if (!chatMessages) return
+  
   const messageDiv = document.createElement('div')
   messageDiv.className = `message ${role}-message`
   
-  const content = document.createElement('p')
-  content.textContent = text
+  const content = document.createElement('div')
+  content.className = 'message-content'
+  
+  // Simple formatting: replace bullet points and preserve line breaks
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l)
+  let htmlParts = []
+  let listItems = []
+  
+  for (let line of lines) {
+    // Check if bullet point or numbered
+    const isBullet = line.match(/^[-•*]\s+/)
+    const isNumbered = line.match(/^\d+\.\s+/)
+    
+    if (isBullet || isNumbered) {
+      const cleanLine = line.replace(/^[-•*]\s+|^\d+\.\s+/, '')
+      listItems.push(cleanLine)
+    } else {
+      // Flush any pending list
+      if (listItems.length > 0) {
+        htmlParts.push('<ul>' + listItems.map(item => `<li>${item}</li>`).join('') + '</ul>')
+        listItems = []
+      }
+      // Add paragraph
+      htmlParts.push(`<p>${line}</p>`)
+    }
+  }
+  
+  // Flush any remaining list
+  if (listItems.length > 0) {
+    htmlParts.push('<ul>' + listItems.map(item => `<li>${item}</li>`).join('') + '</ul>')
+  }
+  
+  content.innerHTML = htmlParts.join('')
 
   messageDiv.appendChild(content)
   chatMessages.appendChild(messageDiv)
@@ -1159,10 +1437,8 @@ function removeLoadingIndicator() {
 
 function loadChatMessages() {
   if (!recoveryAI || recoveryAI.conversationHistory.length === 0) {
-    displayMessage(
-      "Hi there! I'm your Recovery Assistant. I'm here to help you with your journey. You can ask me anything about managing your addiction or dealing with cravings. How are you feeling today?",
-      'assistant'
-    )
+    // Show starter prompts
+    displayStarterPrompts()
     return
   }
 

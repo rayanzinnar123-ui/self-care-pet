@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/cat.svg" type="image/svg+xml">
   <meta name="theme-color" content="#f97316">
-  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Sproutly">
   <link rel="apple-touch-icon" href="icons/cat.svg">
 
@@ -245,19 +245,27 @@
         <!-- Chat Header -->
         <div class="chat-header">
           <h2>Recovery Coach</h2>
-          <button class="icon-btn" id="chat-settings-btn" title="Settings">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M12 1v6m0 6v6" />
-              <path d="M4.22 4.22l4.24 4.24" />
-              <path d="M14.12 9.88l4.24 4.24" />
-              <path d="M1 12h6" />
-              <path d="M17 12h6" />
-              <path d="M4.22 19.78l4.24-4.24" />
-              <path d="M14.12 14.12l4.24-4.24" />
-            </svg>olla
-          </button>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="icon-btn" id="new-convo-btn" title="Start new conversation">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </button>
+            <button class="icon-btn" id="chat-settings-btn" title="Settings">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M12 1v6m0 6v6" />
+                <path d="M4.22 4.22l4.24 4.24" />
+                <path d="M14.12 9.88l4.24 4.24" />
+                <path d="M1 12h6" />
+                <path d="M17 12h6" />
+                <path d="M4.22 19.78l4.24-4.24" />
+                <path d="M14.12 14.12l4.24-4.24" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <!-- Messages Display -->

@@ -363,7 +363,7 @@ body {
   justify-content: flex-end;
 }
 
-.user-message p {
+.user-message .message-content {
   background: var(--primary);
   color: white;
   padding: 0.75rem 1rem;
@@ -372,18 +372,46 @@ body {
   word-wrap: break-word;
 }
 
+.user-message .message-content p {
+  margin: 0;
+}
+
 .ai-message {
   justify-content: flex-start;
 }
 
-.ai-message p {
+.ai-message .message-content {
   background: var(--background);
   color: var(--text);
   padding: 0.75rem 1rem;
   border-radius: 1rem 1rem 1rem 0;
   max-width: 80%;
   word-wrap: break-word;
-  line-height: 1.5;
+  line-height: 1.6;
+}
+
+.ai-message .message-content p {
+  margin: 0.5rem 0;
+  display: block;
+}
+
+.ai-message .message-content p:first-child {
+  margin-top: 0;
+}
+
+.ai-message .message-content p:last-child {
+  margin-bottom: 0;
+}
+
+.ai-message .message-content ul {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+  list-style: disc;
+}
+
+.ai-message .message-content li {
+  margin: 0.25rem 0;
+  line-height: 1.6;
 }
 
 .error-message p {
@@ -482,6 +510,64 @@ body {
 
 .chat-input:focus {
   border-color: var(--secondary);
+}
+
+/* Follow-up Suggestions */
+.follow-up-suggestions {
+  padding: 1rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.75rem !important;
+  border-top: 2px solid var(--primary-light) !important;
+  margin-top: 1rem !important;
+  background: linear-gradient(to right, rgba(249, 115, 22, 0.03), rgba(139, 92, 246, 0.03)) !important;
+  border-radius: 0.75rem !important;
+}
+
+.follow-up-suggestions p {
+  font-size: 0.85rem !important;
+  color: var(--text-muted) !important;
+  margin-bottom: 0.5rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+.follow-up-btn {
+  padding: 0.75rem 1rem !important;
+  border: 2px solid var(--primary) !important;
+  background: white !important;
+  color: var(--primary) !important;
+  border-radius: 0.75rem !important;
+  cursor: pointer !important;
+  font-size: 0.85rem !important;
+  font-weight: 500 !important;
+  transition: all 0.3s ease !important;
+  text-align: left !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+}
+
+.follow-up-btn::before {
+  content: '→' !important;
+  opacity: 0 !important;
+  transition: opacity 0.3s ease !important;
+}
+
+.follow-up-btn:hover {
+  background: var(--primary) !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3) !important;
+  transform: translateX(4px) !important;
+}
+
+.follow-up-btn:hover::before {
+  opacity: 1 !important;
+}
+
+.follow-up-btn:active {
+  transform: translateX(2px) !important;
 }
 
 /* Scrollbar styling */
