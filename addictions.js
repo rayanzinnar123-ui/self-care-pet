@@ -107,6 +107,22 @@ class AddictionsApp {
     this.startDayCounter();
     this.render();
   }
+
+// change addiction
+  changeAddiction() {
+    if (confirm('Are you sure? This will reset your counter.')) {
+      this.selectedAddiction = null;
+      this.soberDate = null;
+      this.hasStarted = false;
+      this.daysSober = 0;
+      this.selectedMood = null;
+      this.chatbotResponse = null;
+      if (this._dayInterval) clearInterval(this._dayInterval);
+      localStorage.removeItem('sobrietyData');
+      this.render();
+    }
+  }
+
 // reset counter
   resetCounter() {
     const today = new Date();
@@ -194,7 +210,10 @@ class AddictionsApp {
             </div>
 
             <p class="hero-message">${this.getHeroMessage()}</p>
-            <button class="btn-reset" onclick="addictionsApp.resetCounter()">Reset Counter</button>
+            <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:1rem;">
+              <button class="btn-reset" onclick="addictionsApp.resetCounter()">Reset Counter</button>
+              <button class="btn-reset" style="background:#8b5cf6;" onclick="addictionsApp.changeAddiction()">Change Addiction</button>
+            </div>
           </div>
 
           <div class="card">
